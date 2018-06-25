@@ -1,0 +1,13 @@
+Vagrant.configure("2") do |config|
+  config.vm.provision "shell", inline: "echo making basevm"
+  config.vm.define "basevm" do |basevm|
+	basevm.vm.box = "<box>"
+	basevm.vm.network "public_network", ip: "192.168.1.255", bridge: "<nic>"
+	basevm.vm.hostname = "basevm"
+	basevm.ssh.username   = "vagrant"
+	basevm.ssh.password   = "vagrant"
+	basevm.ssh.insert_key = "false"
+	basevm.vm.synced_folder "share", "/home/vagrant/share"
+<ScriptFiles>
+  end  
+end
