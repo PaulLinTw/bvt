@@ -426,7 +426,10 @@ for key in ${!hostarr[@]}; do
 			script+="			jmx_port_$vm_name =\"\"\n"
 		fi
 		script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", run:\"always\"\n"
-
+		if (( $vm_disk > 40 )); then
+			echo "vm_disk = $vm_disk"
+			script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_extend_disk.sh\", run:\"always\"\n"
+		fi
 		cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.netdata"
 		use_netdata=$(jq "$cri" -r <$configfile)
 		if [[ "$use_netdata" != "null" ]]; then
@@ -563,6 +566,7 @@ else
 			runcpcmd $hoster "$TEMP_DIR/Vagrantfile.$hoster" "$VAGRANTPATH/$PROJECT/Vagrantfile"
 			runcpcmd $hoster "$TEMP_DIR/hostnames" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/bvt_up.sh" "$VAGRANTPATH/$PROJECT/"
+			runcpcmd $hoster "$PROG_DIR/utilities/bvt_extend_disk.sh" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/bvt_hosts.sh" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/*_netdata.sh" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/*_supervisor.sh" "$VAGRANTPATH/$PROJECT/"
@@ -615,6 +619,7 @@ else
 			cp $TEMP_DIR/Vagrantfile.$hoster $VAGRANTPATH/$PROJECT/Vagrantfile
 			cp $TEMP_DIR/hostnames $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/bvt_up.sh $VAGRANTPATH/$PROJECT/
+			cp $PROG_DIR/utilities/bvt_extend_disk.sh $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/bvt_hosts.sh $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/*_netdata.sh $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/*_supervisor.sh $VAGRANTPATH/$PROJECT/
