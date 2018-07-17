@@ -1,13 +1,11 @@
-set -e
-set -x
-
+#/bin/bash !
 if [ -f .disk_extended ]
 then
    echo "disk already extended so exiting."
    exit 0
 fi
 
-echo "Creating partition..."
+echo "Creating volumn..."
 sudo fdisk -u /dev/sda <<EOF
 n
 p
@@ -19,10 +17,8 @@ t
 w
 EOF
 
-echo "wait 10 seconds"
-sleep 10
-
 echo "Rescan partition..."
+sleep 10
 sudo partprobe
 
 echo "Adding partion to volume group..."

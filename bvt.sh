@@ -1,6 +1,6 @@
 #!/bin/bash
 # bvt version scheme: major.minor
-BVT_VERSION="1.2"
+BVT_VERSION="1.3"
 readonly PROG_NAME=$(basename $0)
 readonly PROG_DIR=$(dirname $(realpath $0))
 readonly INVOKE_DIR=$(pwd)
@@ -425,11 +425,11 @@ for key in ${!hostarr[@]}; do
 		else
 			script+="			jmx_port_$vm_name =\"\"\n"
 		fi
-		script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", run:\"always\"\n"
 		if (( $vm_disk > 40 )); then
-			echo "vm_disk = $vm_disk"
+#			echo "vm_disk = $vm_disk"
 			script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_extend_disk.sh\", run:\"always\"\n"
 		fi
+		script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", run:\"always\"\n"
 		cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.netdata"
 		use_netdata=$(jq "$cri" -r <$configfile)
 		if [[ "$use_netdata" != "null" ]]; then
