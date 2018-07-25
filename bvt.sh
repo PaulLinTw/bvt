@@ -121,7 +121,7 @@ fi
 readonly globalfile=$(realpath $PRJ_PATH/global.json)
 readonly PROJECT_DIR=$(dirname $globalfile)
 readonly PROJECT=$(jq '.project' -r < $globalfile)
-readonly SRC_PATH=$(jq '.|select(.resource!=null)|"\(.resource.site)/raw/\(.resource.tag)"' -r < $globalfile)
+readonly SRC_PATH=$(jq '.|select(.resource!=null)|"\(.resource.site)/\(.resource.tag)"' -r < $globalfile)
 readonly TEMP_DIR=$PROJECT_DIR/temp
 mkdir -p $TEMP_DIR
 
