@@ -429,7 +429,7 @@ for key in ${!hostarr[@]}; do
 #			echo "vm_disk = $vm_disk"
 			script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_extend_disk.sh\", run:\"always\"\n"
 		fi
-		script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", run:\"always\"\n"
+		script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", :args => [ name ], run:\"always\"\n"
 		cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.netdata"
 		use_netdata=$(jq "$cri" -r <$configfile)
 		if [[ "$use_netdata" != "null" ]]; then
