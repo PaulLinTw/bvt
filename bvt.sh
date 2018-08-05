@@ -53,7 +53,7 @@ Tool to manage virtual machine(s) on remote vagrant host(s).
     -sc|--skip-copy      Skip process of copy or download files to hosts
     -nc|--no-clean       Keep Temporary Vagrantfiles, optional
     -t|--tail            Open log tailling console for all hosts, optional
-    -rl|--remove-127001  Open log tailling console for all hosts, optional
+    -rl|--remove-127001  Remove 127.0.0.1 hostname from /etc/hosts for all hosts, optional
 
 EOF
 )"
