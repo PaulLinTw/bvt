@@ -16,6 +16,7 @@ KEY_FILE=""
 ACCOUNT=""
 SRC_PATH=""
 OPEN_TAIL=""
+REMOVE_LOOPBACK="false"
 
 function cprint(){
 echo -e $1
@@ -52,6 +53,7 @@ Tool to manage virtual machine(s) on remote vagrant host(s).
     -sc|--skip-copy      Skip process of copy or download files to hosts
     -nc|--no-clean       Keep Temporary Vagrantfiles, optional
     -t|--tail            Open log tailling console for all hosts, optional
+    -rl|--remove-127001  Open log tailling console for all hosts, optional
 
 EOF
 )"
@@ -103,6 +105,9 @@ while [[ $# > 0 ]]; do
 			;;
 		-t|--tail)
 			OPEN_TAIL="true"
+			;;
+		-rl|--remove-127001)
+			REMOVE_LOOPBACK="true"
 			;;
         *)
             # unknown option
@@ -213,6 +218,11 @@ if [ "$SELECTED_NAME" !=  ""  ] ; then
 fi
 if [ "$SELECTED_HOST" != "" ]; then		
 	cprint "Host filter is ${HColor}$SELECTED_HOST${NC}"
+fi
+if [[ $REMOVE_LOOPBACK == "true" ]] ; then
+	cprint "127.0.0.1 hostname will ${HColor}be removed from${NC} /etc/hosts."
+else
+	cprint "127.0.0.1 hostname will ${HColor}stay in${NC} /etc/hosts."
 fi
 StageText "Validating configuration file format..."
 {
@@ -426,10 +436,13 @@ for key in ${!hostarr[@]}; do
 			script+="			jmx_port_$vm_name =\"\"\n"
 		fi
 		if (( $vm_disk > 40 )); then
-#			echo "vm_disk = $vm_disk"
 			script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_extend_disk.sh\", run:\"always\"\n"
 		fi
-		script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", :args => [ name ], run:\"always\"\n"
+		if [ $REMOVE_LOOPBACK == "true" ] ; then
+			script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", :args => [ name ], run:\"always\"\n"
+		else
+			script+="			$vm_name.vm.provision \"shell\", path: \"./bvt_hosts.sh\", run:\"always\"\n"
+		fi
 		cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.netdata"
 		use_netdata=$(jq "$cri" -r <$configfile)
 		if [[ "$use_netdata" != "null" ]]; then
