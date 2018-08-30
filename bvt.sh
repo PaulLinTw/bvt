@@ -1,6 +1,6 @@
 #!/bin/bash
 # bvt version scheme: major.minor
-BVT_VERSION="1.3"
+BVT_VERSION="1.4"
 readonly PROG_NAME=$(basename $0)
 readonly PROG_DIR=$(dirname $(realpath $0))
 readonly INVOKE_DIR=$(pwd)
@@ -424,6 +424,16 @@ for key in ${!hostarr[@]}; do
 		script+="			$vm_name.ssh.password   = \"vagrant\"\n"
 		script+="			$vm_name.ssh.insert_key = \"false\"\n"
 		script+="			$vm_name.vm.synced_folder \"$vm_name-share\", \"/home/vagrant/share\"\n"
+		cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.bind"
+		binds=$(jq "$cri" -r <$configfile)
+		if [ "$binds" != "null" ] ; then
+			cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.bind[]"
+			binds=$(jq "$cri" -r <$configfile)
+			for c in ${binds[@]}; do
+				bindarr=($(echo $c | tr "," "\n"))
+				script+="			$vm_name.vm.synced_folder \"${bindarr[0]}\", \"${bindarr[1]}\"\n"
+			done
+		fi
 		script+="			ip_address = \"$NETWORK\" + \($vm_startip + i\).to_s\n"
 		if [ "$NETTYPE" == "hostonly" ]; then		
 			script+="			$vm_name.vm.network :private_network, ip: ip_address\n"
