@@ -1,6 +1,6 @@
 #!/bin/bash
 # bvt version scheme: major.minor
-BVT_VERSION="1.4"
+BVT_VERSION="1.5"
 readonly PROG_NAME=$(basename $0)
 readonly PROG_DIR=$(dirname $(realpath $0))
 readonly INVOKE_DIR=$(pwd)
@@ -16,6 +16,7 @@ KEY_FILE=""
 ACCOUNT=""
 SRC_PATH=""
 OPEN_TAIL=""
+BOX_SOURCE="centos"
 REMOVE_LOOPBACK="false"
 
 function cprint(){
@@ -50,6 +51,7 @@ Tool to manage virtual machine(s) on remote vagrant host(s).
     -n|--name            Specify name of vm(s)to run, optional
     -s|--stage           Specify stage [up, provision, halt, reload, status,
                          global-status, clean, vbguest] to run, defalut option is status
+    -bs|--box-source     Specify box source from [sles, centos(default)]
     -sc|--skip-copy      Skip process of copy or download files to hosts
     -nc|--no-clean       Keep Temporary Vagrantfiles, optional
     -t|--tail            Open log tailling console for all hosts, optional
@@ -80,6 +82,10 @@ while [[ $# > 0 ]]; do
 			;;
 		-p|--path)
 			PRJ_PATH="$2"
+			shift
+			;;
+		-bs|--box-source)
+			BOX_SOURCE="$2"
 			shift
 			;;
 		-s|--stage)
@@ -224,6 +230,9 @@ if [[ $REMOVE_LOOPBACK == "true" ]] ; then
 else
 	cprint "127.0.0.1 hostname will ${HColor}stay in${NC} /etc/hosts."
 fi
+
+cprint "Box Source is ${HColor}$BOX_SOURCE${NC}"
+
 StageText "Validating configuration file format..."
 {
 	x=$(jq '.' < $configfile)
@@ -420,9 +429,11 @@ for key in ${!hostarr[@]}; do
 		script+="			end\n"
 		script+="			$vm_name.disksize.size = '${vm_disk}GB'\n"
 		script+="			$vm_name.vm.hostname = name\n"
-		script+="			$vm_name.ssh.username   = \"vagrant\"\n"
-		script+="			$vm_name.ssh.password   = \"vagrant\"\n"
-		script+="			$vm_name.ssh.insert_key = \"false\"\n"
+		if [[ "$BOX_SOURCE" == "centos" ]]; then
+			script+="			$vm_name.ssh.username   = \"vagrant\"\n"
+			script+="			$vm_name.ssh.password   = \"vagrant\"\n"
+			script+="			$vm_name.ssh.insert_key = \"false\"\n"
+		fi
 		script+="			$vm_name.vm.synced_folder \"$vm_name-share\", \"/home/vagrant/share\"\n"
 		cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.bind"
 		binds=$(jq "$cri" -r <$configfile)
@@ -589,7 +600,7 @@ else
 			runcpcmd $hoster "$TEMP_DIR/Vagrantfile.$hoster" "$VAGRANTPATH/$PROJECT/Vagrantfile"
 			runcpcmd $hoster "$TEMP_DIR/hostnames" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/bvt_up.sh" "$VAGRANTPATH/$PROJECT/"
-			runcpcmd $hoster "$PROG_DIR/utilities/bvt_extend_disk.sh" "$VAGRANTPATH/$PROJECT/"
+			runcpcmd $hoster "$PROG_DIR/utilities/bvt_extend_disk_$BOX_SOURCE.sh" "$VAGRANTPATH/$PROJECT/bvt_extend_disk.sh"
 			runcpcmd $hoster "$PROG_DIR/utilities/bvt_hosts.sh" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/*_netdata.sh" "$VAGRANTPATH/$PROJECT/"
 			runcpcmd $hoster "$PROG_DIR/utilities/*_supervisor.sh" "$VAGRANTPATH/$PROJECT/"
@@ -642,7 +653,7 @@ else
 			cp $TEMP_DIR/Vagrantfile.$hoster $VAGRANTPATH/$PROJECT/Vagrantfile
 			cp $TEMP_DIR/hostnames $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/bvt_up.sh $VAGRANTPATH/$PROJECT/
-			cp $PROG_DIR/utilities/bvt_extend_disk.sh $VAGRANTPATH/$PROJECT/
+			cp $PROG_DIR/utilities/bvt_extend_disk_$BOX_SOURCE.sh $VAGRANTPATH/$PROJECT/bvt_extend_disk.sh
 			cp $PROG_DIR/utilities/bvt_hosts.sh $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/*_netdata.sh $VAGRANTPATH/$PROJECT/
 			cp $PROG_DIR/utilities/*_supervisor.sh $VAGRANTPATH/$PROJECT/
