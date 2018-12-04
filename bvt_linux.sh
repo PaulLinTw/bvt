@@ -1,6 +1,6 @@
 #!/bin/bash
 # bvt version scheme: major.minor
-BVT_VERSION="2.0"
+BVT_VERSION="1.5"
 readonly PROG_NAME=$(basename $0)
 readonly PROG_DIR=$(dirname $(realpath $0))
 readonly INVOKE_DIR=$(pwd)
@@ -186,7 +186,6 @@ function replacement() {
 	fi
 }
 
-StageText "vagrant tool ${HColor}$BVT_VERSION${NC}"
 StageText "Begin to process vm(s) for project $PROJECT"
 cp $PROJECT_DIR/project.json $TEMP_DIR/_project.json
 
@@ -290,23 +289,20 @@ function buildhostnames(){
 	hosts=$(jq "$cri" -r <$prjcfg)
 	for i in ${hosts[@]}
 	do
-		iterh=${i//$'\r'}
 		build=1
 		for j in "${!hostlist[@]}"; do
-			looper=${j//$'\r'}
-			# echo "$looper  $iterh"
-	   		if [[ "$looper" = "$iterh" ]]; then
-	       		# echo "$iterh exists"
+			#echo "$j  ${i}"
+	   		if [[ "$j" = "${i}" ]]; then
+	       		#echo "${i} exists"
 				build=0
 	   		fi
 		done
 	   	if [[ "$build" = "1" ]]; then
-			cri=".[]|select(.host==\"$iterh\")|.name,.size,.startip,.startid"
-			tmp=$(jq "$cri" -r <$prjcfg)
-			items=${tmp//$'\r'}
-			# echo $items
+			cri=".[]|select(.host==\"${i}\")|.name,.size,.startip,.startid"
+			items=$(jq "$cri" -r <$prjcfg)
+			#echo $items
 			if [ "[$items]" != "[]" ] ; then	
-				hostlist+=( ["$iterh"]="$items")
+				hostlist+=( ["$i"]="$items")
 			fi
 	   	fi
 	done
@@ -318,10 +314,10 @@ function buildhostnames(){
 		x=(${hostlist[${key}]})
 		for ((k=0;k< ${#x[@]}; k+=4))
 		do
-			vmname=${x[k]//$'\r'}
-			vmsize=${x[k+1]//$'\r'}
-			vmstartip=${x[k+2]//$'\r'}
-			vmstartid=${x[k+3]//$'\r'}
+			vmname=${x[k]}
+			vmsize=${x[k+1]}
+			vmstartip=${x[k+2]}
+			vmstartid=${x[k+3]}
 			if [[ "$vmstartid" == "null" ]]; then
 				vmstartid=1
 			fi
@@ -348,9 +344,8 @@ relatedPrj=$(jq '.relatedprojects' -r < $globalfile)
 if [[ "$relatedPrj" == "["*"]" ]]; then		
 	relatedPrj=$(jq '.relatedprojects[]' -r < $globalfile)
 	for pp in ${relatedPrj[@]}; do
-		related=${pp//$'\r'}
-		echo Processing hostnames of project $related...
-		hostnames+=$(buildhostnames "$related")
+		echo Processing hostnames of project $pp...
+		hostnames+=$(buildhostnames "$pp")
 	done
 fi
 printf "$hostnames"
@@ -362,29 +357,26 @@ cri=".[]|select(.host!=null)|.host"
 hosts=$(jq "$cri" -r <$configfile)
 for i in ${hosts[@]}
 do
-	iterh=${i//$'\r'}
 	build=1
 	for j in "${!hostarr[@]}"; do
-		looper=${j//$'\r'}
-		#echo "$looper  $iterh"
-   		if [[ "$looper" = "$iterh" ]]; then
-       		#echo "$iterh exists"
+		#echo "$j  ${i}"
+   		if [[ "$j" = "${i}" ]]; then
+       		#echo "${i} exists"
 			build=0
    		fi
 	done
-	if [ "$SELECTED_HOST" != "" ]&& [ "$SELECTED_HOST" != "$iterh" ]; then		
+	if [ "$SELECTED_HOST" != "" ]&& [ "$SELECTED_HOST" != "$i" ]; then		
 		build=0
 	fi
    	if [[ "$build" = "1" ]]; then
 			
-		cri=".[]|select(.host==\"$iterh\")|.name,.size, if .box.prefix == \"yes\" then \"$PROJECT-\(.box.title)\" else .box.title end,.startip,.jmx,.startid,.cpu,.memory,.disk"
+		cri=".[]|select(.host==\"${i}\")|.name,.size, if .box.prefix == \"yes\" then \"$PROJECT-\(.box.title)\" else .box.title end,.startip,.jmx,.startid,.cpu,.memory,.disk"
 		#echo $cri
-		tmp=$(jq "$cri" -r <$configfile)
-		items=${tmp//$'\r'}
+		items=$(jq "$cri" -r <$configfile)
 		#echo $items
 		if [ "[$items]" != "[]" ] ; then	
-			#echo "add ${items} for $iterh"
-			hostarr+=( ["$iterh"]="$items")
+			#echo add $items for $i
+			hostarr+=( ["$i"]="$items")
 		fi
    	fi
 done
@@ -393,21 +385,21 @@ for key in ${!hostarr[@]}; do
 
 	cri=".hosts[]|select(.host==\"$key\")|.nic,.defaultbox"
 	hostinfo=($(jq "$cri" -r < $globalfile))
-	nic=${hostinfo[0]//$'\r'}
-	base_box=${hostinfo[1]//$'\r'}
+	nic=${hostinfo[0]}
+	base_box=${hostinfo[1]}
 	script=""
 	x=(${hostarr[${key}]})
 	for ((k=0;k< ${#x[@]}; k+=$argcount))
 	do
-		vm_name=${x[k]//$'\r'}
-		vm_size=${x[k+1]//$'\r'}
-		vm_box=${x[k+2]//$'\r'}
-		vm_startip=${x[k+3]//$'\r'}
-		vm_jmx=${x[k+4]//$'\r'}
-		vm_startid=${x[k+5]//$'\r'}
-		vm_cpu=${x[k+6]//$'\r'}
-		vm_mem=${x[k+7]//$'\r'}
-		vm_disk=${x[k+8]//$'\r'}
+		vm_name=${x[k]}
+		vm_size=${x[k+1]}
+		vm_box=${x[k+2]}
+		vm_startip=${x[k+3]}
+		vm_jmx=${x[k+4]}
+		vm_startid=${x[k+5]}
+		vm_cpu=${x[k+6]}
+		vm_mem=${x[k+7]}
+		vm_disk=${x[k+8]}
 		if [[ "$vm_startid" == "null" ]]; then
 			vm_startid=1
 		fi
@@ -420,7 +412,7 @@ for key in ${!hostarr[@]}; do
 		if [[ "$vm_disk" == "null" ]]; then
 			vm_disk=40
 		fi
-		script+="\n	num_${vm_name} = $vm_size\n"
+		script+="\n	num_$vm_name = $vm_size\n"
 		script+="	(1..num_$vm_name).each { |i|\n"
 		script+="		vmid = \($vm_startid+i-1\).to_s\n"
 		script+="		name = \"$vm_name\" + vmid\n"
@@ -527,12 +519,12 @@ function runcpcmd() {
 
 function copy_src() {
 	dsthost=$1
-	srcpath=${2//$'\r'}
+	srcpath=$2
 	fname=$3
 	dstpath=$4
 	bname=$(basename $fname)
 	toReplace=$TEMP_DIR/$bname
-	if [[ -f {$test//'\r'} ]]; then
+	if [[ -f $PROJECT_DIR/$srcpath/$fname ]]; then
 		cp $PROJECT_DIR/$srcpath/$fname $toReplace
 		replacement $srcpath $toReplace
 		runcpcmd "$dsthost" "$toReplace" "$dstpath/$bname"
@@ -558,7 +550,7 @@ function copy_src() {
 
 function copy_src_local() {
 	srcpath=$1
-	fname=${2//$'\r'}
+	fname=$2
 	dstpath=$3
 	bname=$(basename $fname)
 	toReplace=$TEMP_DIR/$bname
@@ -595,13 +587,13 @@ else
 		hoster=$key
 		cri=".hosts[]|select(.host==\"$key\")|.account,.keyfile,.vagrantpath"
 		hostinfo=($(jq "$cri" -r < $globalfile))
-		ACCOUNT=${hostinfo[0]//$'\r'}
-		kf=${hostinfo[1]//$'\r'}
+		ACCOUNT=${hostinfo[0]}
+		kf=${hostinfo[1]}
 		if [ "$kf" != "null" ]; then		
 			#echo you assigned ssh key file $kf
 			KEY_FILE=" -i $kf "
 		fi
-		VAGRANTPATH=${hostinfo[2]//$'\r'}
+		VAGRANTPATH=${hostinfo[2]}
 		cprint "Copying files to host $HColor$hoster$NC..."
 		if [ "$local" != "$hoster" ] ; then
 			runsshcmd $hoster "mkdir -p $VAGRANTPATH/$PROJECT"
@@ -616,7 +608,7 @@ else
 			x=(${hostarr[${key}]})
 			for ((k=0;k< ${#x[@]}; k+=$argcount))
 			do
-				vm_name=${x[k]//$'\r'}
+				vm_name=${x[k]}
 				runsshcmd $hoster "mkdir -p $VAGRANTPATH/$PROJECT/$vm_name-share"
 				cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.provision"
 				files=$(jq "$cri" -r <$configfile)
@@ -669,7 +661,7 @@ else
 			x=(${hostarr[${key}]})
 			for ((k=0;k< ${#x[@]}; k+=$argcount))
 			do
-				vm_name=${x[k]//$'\r'}
+				vm_name=${x[k]}
 				echo "vm_name=$vm_name"
 				mkdir -p $VAGRANTPATH/$PROJECT/$vm_name-share
 				cri=".[]|select(.host==\"${key}\")|select(.name==\"$vm_name\")|.provision"
@@ -726,8 +718,8 @@ for key in ${!hostarr[@]}; do
 	hoster=$key
 	cri=".hosts[]|select(.host==\"$key\")|.account,.keyfile,.vagrantpath"
 	hostinfo=($(jq "$cri" -r < $globalfile))
-	ACCOUNT=${hostinfo[0]//$'\r'}
-	kf=${hostinfo[1]//$'\r'}
+	ACCOUNT=${hostinfo[0]}
+	kf=${hostinfo[1]}
 	if [ "$kf" != "null" ]; then		
 		KEY_FILE=" -i $kf "
 	else
@@ -738,9 +730,9 @@ for key in ${!hostarr[@]}; do
 	x=(${hostarr[${key}]})
 	for ((k=0;k< ${#x[@]}; k+=$argcount))
 	do
-		vm_name=${x[k]//$'\r'}
-		vm_size=${x[k+1]//$'\r'}
-		vm_startid=${x[k+5]//$'\r'}
+		vm_name=${x[k]}
+		vm_size=${x[k+1]}
+		vm_startid=${x[k+5]}
 		if [[ "$vm_startid" == "null" ]]; then
 			vm_startid=1
 		fi
@@ -767,11 +759,7 @@ for key in ${!hostarr[@]}; do
 			else
 				runsshcmd $hoster "$VAGRANTPATH/$PROJECT/bvt_up.sh --$SELECTED_STAGE $WithNames >> $VAGRANTPATH/log.$PROJECT &"
 				if [ "$OPEN_TAIL" == "true" ]; then
-					if [ "$OSTYPE" == "msys" ]; then
-						git-bash.exe -c "ssh $KEY_FILE $ACCOUNT@$hoster tail -f $VAGRANTPATH/log.$PROJECT" & > /dev/null 2&>1 
-					else
-						tilix -t "[$ACCOUNT@$hoster] $VAGRANTPATH/log.$PROJECT" --command="ssh $KEY_FILE $ACCOUNT@$hoster tail -f $VAGRANTPATH/log.$PROJECT"
-					fi
+					tilix -t "[$ACCOUNT@$hoster] $VAGRANTPATH/log.$PROJECT" --command="ssh $KEY_FILE $ACCOUNT@$hoster tail -f $VAGRANTPATH/log.$PROJECT"
 				fi
 			fi
 		else
@@ -780,11 +768,7 @@ for key in ${!hostarr[@]}; do
 			else
 				$VAGRANTPATH/$PROJECT/bvt_up.sh --$SELECTED_STAGE $WithNames >> $VAGRANTPATH/log.$PROJECT &
 				if [ "$OPEN_TAIL" == "true" ]; then
-					if [ "$OSTYPE" == "msys" ]; then
-						git-bash.exe -c "tail -f $VAGRANTPATH/log.$PROJECT" & > /dev/null 2&>1 
-					else
-						tilix -t "[localhost] $VAGRANTPATH/log.$PROJECT" --command="tail -f $VAGRANTPATH/log.$PROJECT"
-					fi
+					tilix -t "[localhost] $VAGRANTPATH/log.$PROJECT" --command="tail -f $VAGRANTPATH/log.$PROJECT"
 				fi
 			fi
 		fi
